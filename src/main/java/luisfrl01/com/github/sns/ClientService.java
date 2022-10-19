@@ -1,13 +1,21 @@
 package luisfrl01.com.github.sns;
 
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.ListTopicsResult;
+import com.amazonaws.services.sns.model.PublishRequest;
+import com.amazonaws.services.sns.model.Topic;
+import com.amazonaws.services.sqs.AmazonSQSAsync;
+import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import io.awspring.cloud.messaging.core.NotificationMessagingTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -19,7 +27,37 @@ public class ClientService {
     @Value("${aws.sns-topic.name}")
     private String topicName;
 
-    public void sendClient(Client client) {
+    @Value("${aws.fila}")
+    private String fila;
+
+    @Value("${aws.region}")
+    private String region;
+
+    @Autowired
+    private AmazonSNS amazonSNS;
+
+    @Autowired
+    private AmazonSQSAsync amazonSQSAsync;
+
+    public void subscribeSns() {
+        GetQueueUrlResult queueUrl = amazonSQSAsync.getQueueUrl(fila);
+        amazonSNS.subscribe("arn:aws:sns:" + region + ":000000000000:" + topicName, "sqs", queueUrl.getQueueUrl());
+    }
+
+    public List<Topic> getTopics() {
+        ListTopicsResult listTopicsResult = amazonSNS.listTopics();
+        return listTopicsResult.getTopics();
+    }
+
+    public void createTopic(String topic) {
+        amazonSNS.createTopic(topic);
+    }
+
+    public void sendByPublish(Client client) {
+        amazonSNS.publish("arn:aws:sns:" + region + ":000000000000:" + topicName, client.toString());
+    }
+
+    public void sendClient(Client client)  {
         GenericMessage<Client> message = new GenericMessage<>(client);
         log.info("Method send args <<generic message>>. Using default topic.");
         notificationMessagingTemplate.send(message);

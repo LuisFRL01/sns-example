@@ -1,10 +1,10 @@
 package luisfrl01.com.github.sns;
 
+import com.amazonaws.services.sns.model.Topic;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/sns-example")
@@ -12,6 +12,26 @@ public class ClientController {
 
     @Autowired
     private ClientService clientService;
+
+    @GetMapping("/subscribe")
+    public void subscribeSns() {
+        clientService.subscribeSns();
+    }
+
+    @GetMapping("/topics")
+    public List<Topic> getTopics() {
+        return clientService.getTopics();
+    }
+
+    @PostMapping("/create/topic/{topicName}")
+    public void createTopic(@PathVariable("topicName") String topicName) {
+        clientService.createTopic(topicName);
+    }
+
+    @PostMapping("/publish")
+    public void postWithPublish(@RequestBody Client client) {
+        clientService.sendByPublish(client);
+    }
 
     @PostMapping("/send")
     public void postWithSendClient(@RequestBody Client client) {
